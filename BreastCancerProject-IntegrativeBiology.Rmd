@@ -53,4 +53,9 @@ coordinates <- spatialCoords(speBreast)
 c(max(coordinates),min(coordinates))
 range(coordinates)
 ```
+#Plotting the data
+
+```{r}
+
+```
 
