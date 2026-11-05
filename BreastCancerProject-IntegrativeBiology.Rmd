@@ -5,6 +5,10 @@ date: "2026-11-05"
 output: html_document
 ---
 
+# Breast Cancer Spatial Transcriptomics
+
+## Library loading
+
 ```{r}
 library(BayesSpace)
 library(ComplexHeatmap)
@@ -15,32 +19,40 @@ library(scrapper)
 library(SpatialExperiment)
 ```
 
-#Data loading
+## Data loading
+
 ```{r}
 spe <- load('Breast_ST5.RData')
 ```
 
-#Preliminary data exploration
+## Preliminary data exploration
 
 Number of genes and rows
+
 ```{r}
 dim(speBreast)
 ```
+
 Which are the names of the assays?
 
 ```{r}
 assayNames(speBreast)
 ```
+
 Which gene ID is used in the assay?
 
 ```{r}
 speBreast@rowRanges
 ```
+
 What other type of additional information can be retrieved about the genes?
+
 ```{r}
 head(rowData(speBreast))
 ```
+
 What other type of additional information can be retrieved about the spots?
+
 ```{r}
 colData(speBreast)
 ```
@@ -54,14 +66,17 @@ c(max(coordinates),min(coordinates))
 range(coordinates)
 ```
 
-#Visualize data
+## Visualize the data
 
-Plotting the spatial coordinates and with the annotation
+Plotting the spatial coordinates and annotations
+
 ```{r}
 plotCoords(speBreast, point_size = 5)
 plotCoords(speBreast, point_size = 5, annotate = 'annotation')
 ```
-Highliting one specific spot
+
+Highlighting one specific spot
+
 ```{r}
 coords <- as.data.frame(coordinates)
 min_y_coord <- coords$pxl_row_in_fullres == min(coords$pxl_row_in_fullres)
@@ -73,8 +88,8 @@ colData(speBreast)[, 'Top_Left'] <- as.character(colnames(speBreast) == top_left
 plotCoords(speBreast, annotate = "Top_Left", point_size = 5, pal = c('grey','red'))
 ```
 
-Plotting the expression values for the VAMP7 gene.
-Highlight which are the sports with the max value of VAMP7 expression.
+Plotting the expression values for the VAMP7 gene. Highlight which are the sports with the max value of VAMP7 expression.
+
 ```{r}
 vamp7 <- rownames(speBreast)[rowData(speBreast)$symbol == 'VAMP7'] 
 plotCoords(speBreast, annotate = vamp7, point_size = 5) + ggtitle("VAMP7")
@@ -84,11 +99,13 @@ plotCoords(speBreast, annotate = vamp7, point_size = 5) + ggtitle("VAMP7")
 colData(speBreast)[, "maxVAMP7"] <- as.character(assay(speBreast)[vamp7,] == max(assay(speBreast)[vamp7,]))
 plotCoords(speBreast, annotate = "maxVAMP7", point_size = 5, pal = c("grey","red"))
 ```
-#Quality Control
+
+## Quality Control
 
 Violin plot of the QC metrics and scatterplot of QC metrics together
-```{r}
-speBreast <- speBreast[, speBreast$in_tissue == 1]
-dim(speBreast)
-```
 
+```{r}
+#raw_counts <- assay(speBreast)
+#control_1 <- speBreast
+#quickRnaQc.se(raw_counts, control_1)
+```
