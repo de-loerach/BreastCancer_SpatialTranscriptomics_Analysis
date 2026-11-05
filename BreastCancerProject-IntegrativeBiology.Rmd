@@ -63,27 +63,32 @@ plotCoords(speBreast, point_size = 5, annotate = 'annotation')
 ```
 Highliting one specific spot
 ```{r}
-x_all <- spatialCoords(speBreast)[, colnames(coordinates)[1]]
-y_all <- spatialCoords(speBreast)[, colnames(coordinates)[2]]
+coords <- as.data.frame(coordinates)
+min_y_coord <- coords$pxl_row_in_fullres == min(coords$pxl_row_in_fullres)
+min_x_coords <- coords$pxl_col_in_fullres == min(coords$pxl_col_in_fullres[min_y_coord])
 
-# 1. Find all spots belonging to the topmost row (minimum Y)
-top_row <- y_all == min(y_all)
+top_left <- rownames(coords)[which(min_x_coords & min_y_coord)]
+colData(speBreast)[, 'Top_Left'] <- as.character(colnames(speBreast) == top_left)
 
-# 2. Pick the leftmost spot (minimum X) among those in the top row
-target_idx <- which(top_row)[which.min(x_all[top_row])]
-
-# 3. Create the logical mask (TRUE only for that single top-left spot)
-mask <- seq_along(x_all) == target_idx
-
-# 4. Add metadata and plot
-colData(speBreast)$top_left <- factor(mask, levels = c(FALSE, TRUE), labels = c("Other", "Target"))
-
-plotCoords(speBreast, annotate = "top_left", point_size = 5) +
-  scale_color_manual(values = c("Other" = "black", "Target" = "red"))
+plotCoords(speBreast, annotate = "Top_Left", point_size = 5, pal = c('grey','red'))
 ```
-Plotting the expression values for the VAMP 
+
+Plotting the expression values for the VAMP7 gene.
+Highlight which are the sports with the max value of VAMP7 expression.
 ```{r}
+vamp7 <- rownames(speBreast)[rowData(speBreast)$symbol == 'VAMP7'] 
+plotCoords(speBreast, annotate = vamp7, point_size = 5) + ggtitle("VAMP7")
 
+#Maximum expression
+
+colData(speBreast)[, "maxVAMP7"] <- as.character(assay(speBreast)[vamp7,] == max(assay(speBreast)[vamp7,]))
+plotCoords(speBreast, annotate = "maxVAMP7", point_size = 5, pal = c("grey","red"))
 ```
+#Quality Control
 
+Violin plot of the QC metrics and scatterplot of QC metrics together
+```{r}
+speBreast <- speBreast[, speBreast$in_tissue == 1]
+dim(speBreast)
+```
 
