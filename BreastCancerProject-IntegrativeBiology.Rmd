@@ -1,0 +1,56 @@
+---
+title: "BreastCancerProject-SpatialTranscriptomics"
+author: "Gerardo De Loera"
+date: "2026-11-05"
+output: html_document
+---
+
+```{r}
+library(BayesSpace)
+library(ComplexHeatmap)
+library(ggspavis)
+library(scater)
+library(scran)
+library(scrapper)
+library(SpatialExperiment)
+```
+
+#Data loading
+```{r}
+load('Breast_ST5.RData')
+```
+
+#Visualization and preliminary data exploration
+
+## Number of genes and rows
+```{r}
+dim(speBreast)
+```
+## Which are the names of the assays?
+
+```{r}
+assayNames(speBreast)
+```
+## Which gene ID is used in the assay?
+
+```{r}
+speBreast@rowRanges
+```
+## What other type of additional information can be retrieved about the genes?
+```{r}
+head(rowData(speBreast))
+```
+## What other type of additional information can be retrieved about the spots?
+```{r}
+colData(speBreast)
+```
+
+## Which is the max and the min of the spatial coordinates?
+
+```{r}
+head(spatialCoords(speBreast))
+coordinates <- spatialCoords(speBreast)
+c(max(coordinates),min(coordinates))
+range(coordinates)
+```
+
