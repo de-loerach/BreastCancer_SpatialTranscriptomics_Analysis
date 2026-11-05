@@ -17,35 +17,35 @@ library(SpatialExperiment)
 
 #Data loading
 ```{r}
-load('Breast_ST5.RData')
+spe <- load('Breast_ST5.RData')
 ```
 
-#Visualization and preliminary data exploration
+#Preliminary data exploration
 
-## Number of genes and rows
+Number of genes and rows
 ```{r}
 dim(speBreast)
 ```
-## Which are the names of the assays?
+Which are the names of the assays?
 
 ```{r}
 assayNames(speBreast)
 ```
-## Which gene ID is used in the assay?
+Which gene ID is used in the assay?
 
 ```{r}
 speBreast@rowRanges
 ```
-## What other type of additional information can be retrieved about the genes?
+What other type of additional information can be retrieved about the genes?
 ```{r}
 head(rowData(speBreast))
 ```
-## What other type of additional information can be retrieved about the spots?
+What other type of additional information can be retrieved about the spots?
 ```{r}
 colData(speBreast)
 ```
 
-## Which is the max and the min of the spatial coordinates?
+Which is the max and the min of the spatial coordinates?
 
 ```{r}
 head(spatialCoords(speBreast))
@@ -53,9 +53,37 @@ coordinates <- spatialCoords(speBreast)
 c(max(coordinates),min(coordinates))
 range(coordinates)
 ```
-#Plotting the data
 
+#Visualize data
+
+Plotting the spatial coordinates and with the annotation
+```{r}
+plotCoords(speBreast, point_size = 5)
+plotCoords(speBreast, point_size = 5, annotate = 'annotation')
+```
+Highliting one specific spot
+```{r}
+x_all <- spatialCoords(speBreast)[, colnames(coordinates)[1]]
+y_all <- spatialCoords(speBreast)[, colnames(coordinates)[2]]
+
+# 1. Find all spots belonging to the topmost row (minimum Y)
+top_row <- y_all == min(y_all)
+
+# 2. Pick the leftmost spot (minimum X) among those in the top row
+target_idx <- which(top_row)[which.min(x_all[top_row])]
+
+# 3. Create the logical mask (TRUE only for that single top-left spot)
+mask <- seq_along(x_all) == target_idx
+
+# 4. Add metadata and plot
+colData(speBreast)$top_left <- factor(mask, levels = c(FALSE, TRUE), labels = c("Other", "Target"))
+
+plotCoords(speBreast, annotate = "top_left", point_size = 5) +
+  scale_color_manual(values = c("Other" = "black", "Target" = "red"))
+```
+Plotting the expression values for the VAMP 
 ```{r}
 
 ```
+
 
