@@ -105,7 +105,38 @@ plotCoords(speBreast, annotate = "maxVAMP7", point_size = 5, pal = c("grey","red
 Violin plot of the QC metrics and scatterplot of QC metrics together
 
 ```{r}
-#raw_counts <- assay(speBreast)
-#control_1 <- speBreast
-#quickRnaQc.se(raw_counts, control_1)
+#First, we generate the GC features
+#We add in metadata the QC parameter calculated by the method
+
+qc_object <- quickRnaQc.se(speBreast, subsets = list())
+
+#We compute the QC metrics for the experiment
+qc <- computeRnaQcMetrics(assay(speBreast), sub=list())
+qc
+
+#We filter the cells according to the generated suggested thresholds
+filt <- suggestRnaQcThresholds(qc)
+str(filt)
+keep <- filterRnaQcMetrics(filt, qc)
+summary(keep)
+
 ```
+
+We plot the QC
+
+```{r}
+plotObsQC(qc_object, plot_type = 'violin', x_metric = 'sum')
+plotObsQC(qc_object, plot_type = 'violin', x_metric = 'detected')
+```
+
+```{r}
+rowData(qc_object)$feature_sum <- rowSums(counts(qc_object))
+rowData(qc_object)$low_abundance <- rowSums(counts(qc_object) > 0) < 20
+plotFeatureQC(qc_object, plot_type = "histogram",
+x_metric = "feature_sum", annotate = "low_abundance")
+plotFeatureQC(qc_object, plot_type = "violin",
+x_metric = "feature_sum", annotate = "low_abundance")
+
+```
+
+
