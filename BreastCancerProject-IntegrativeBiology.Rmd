@@ -108,35 +108,123 @@ Violin plot of the QC metrics and scatterplot of QC metrics together
 #First, we generate the GC features
 #We add in metadata the QC parameter calculated by the method
 
-qc_object <- quickRnaQc.se(speBreast, subsets = list())
+speBreast <- quickRnaQc.se(speBreast, subsets = list())
+head(colData(speBreast))
+
+p1 <- plotObsQC(speBreast, 
+    plot_type="scatter", 
+    x_metric="detected", 
+    y_metric="sum",
+    y_threshold=600) + 
+    ggtitle("Library size vs. cells per spot")
+p1
 
 #We compute the QC metrics for the experiment
-qc <- computeRnaQcMetrics(assay(speBreast), sub=list())
-qc
+#qc <- computeRnaQcMetrics(assay(speBreast), sub=list())
+#qc
 
 #We filter the cells according to the generated suggested thresholds
-filt <- suggestRnaQcThresholds(qc)
-str(filt)
-keep <- filterRnaQcMetrics(filt, qc)
-summary(keep)
+#filt <- suggestRnaQcThresholds(qc)
+#str(filt)
+#keep <- filterRnaQcMetrics(filt, qc)
+#summary(keep)
 
 ```
 
 We plot the QC
 
 ```{r}
-plotObsQC(qc_object, plot_type = 'violin', x_metric = 'sum')
-plotObsQC(qc_object, plot_type = 'violin', x_metric = 'detected')
+plotObsQC(speBreast, plot_type = 'violin', x_metric = 'sum') + 
+    xlab("Library size")
+plotObsQC(speBreast, plot_type = 'violin', x_metric = 'detected')  + 
+    xlab("Genes per spot")
+```
+
+
+```{r}
+# select QC thresholds for library size, 
+# detected features & mito. proportion
+speBreast$qc_lib_size <- speBreast$sum < 600
+speBreast$qc_detected <- speBreast$detected < 400
+
+# tabulate number of cells kept/flagged by each
+qc <- grep("^qc", names(colData(speBreast)))
+sapply(colData(speBreast)[qc], table)
+
+# check spatial pattern of discarded spots
+p1 <- plotObsQC(speBreast, 
+    plot_type="spot", annotate="qc_lib_size") + 
+    ggtitle("Library size (< 600 UMI)")
+
+p2 <- plotObsQC(speBreast, 
+    plot_type="spot", annotate="qc_detected") + 
+    ggtitle("Detected genes (< 400 genes)")
+
+p1
+p2
+```
+
+## Normalization
+
+A simple and fast approach for normalization is 'library size normalization', which consists of calculating log-transformed nomralized counts ('log counts') using library size factors.
+This method is simple, fast and generally provides a good baseline.
+
+ - Plot the histogram of the size factors and the expression of the normalized VAMP7 gene expression.
+ 
+```{r}
+# calculate logcounts using library size factors
+spe <- normalizeRnaCounts.se(speBreast)
+
+summary(sizeFactors(spe))
 ```
 
 ```{r}
-rowData(qc_object)$feature_sum <- rowSums(counts(qc_object))
-rowData(qc_object)$low_abundance <- rowSums(counts(qc_object) > 0) < 20
-plotFeatureQC(qc_object, plot_type = "histogram",
-x_metric = "feature_sum", annotate = "low_abundance")
-plotFeatureQC(qc_object, plot_type = "violin",
-x_metric = "feature_sum", annotate = "low_abundance")
-
+hist(sizeFactors(spe), breaks = 50, main = "Histogram of size factors")
 ```
+
+```{r}
+#assayNames(spe)
+
+plotCoords(speBreast, annotate = vamp7, point_size = 5) + ggtitle("VAMP7")
+plotCoords(spe, annotate = vamp7, assay_name='logcounts', point_size = 5) + ggtitle("VAMP7 Normalized")
+```
+
+## Feature selection
+Feature selection methods can identify highly variable genes (HVGs) and spatially variable genes (SVGs)
+### HVGs
+Compute the fit mean-variance relationship. and visualize it
+```{r}
+# fit mean-variance relationship and select top HVGs
+spe <- chooseRnaHvgs.se(
+    spe, 
+    top = ceiling(0.1 * nrow(spe)),
+    more.var.args = list(use.min.width = TRUE))
+
+# plot
+rd <- rowData(spe)
+plot(rd$means, rd$variances, 
+    xlab = "mean (logexpr)", ylab = "variance (logexpr)")
+o <- order(rd$means)
+lines(rd$means[o], rd$fitted[o], col = "dodgerblue")
+```
+
+
+Select the top 10% of the HVGs. How many are there?
+```{r}
+# select top HVGs
+sel <- rownames(spe)[rd$hvg]
+# number of HVGs selected
+length(sel)
+MVG <- rowData(spe)$symbol[which.max(rd$variances)]
+MVG
+SPP1 <- rownames(speBreast)[rowData(speBreast)$symbol == 'SPP1'] 
+```
+
+
+Plot the normalized expression values of the most variable gene
+```{r}
+plotCoords(spe, annotate =SPP1 , assay_name='logcounts', point_size = 5) + ggtitle("SPP1")
+```
+
 
 
